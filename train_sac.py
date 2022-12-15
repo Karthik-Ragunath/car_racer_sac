@@ -66,10 +66,10 @@ def train(seed: int = 69,
     
     """
     # Environment
-    env = gym.make("CarRacing-v0")
+    env = gym.make("CarRacing-v2")
     torch.manual_seed(seed)
     np.random.seed(seed)
-    env.seed(seed)
+    # env.seed(seed)
 
     # NOTE: ALWAYS CHECK PARAMETERS BEFORE TRAINING
     agent = SAC(env.action_space,
@@ -126,7 +126,7 @@ def train(seed: int = 69,
         episode_reward = 0
         episode_steps = 0
         done = False
-        state = env.reset()
+        state = env.reset()[0]
         state = process_observation(state)
         state = encoder.sample(state)
         # choose random starting position for the car
@@ -154,7 +154,8 @@ def train(seed: int = 69,
                 # Number of updates per step in environment
                 for _ in range(updates_per_step):
                     # Update parameters of all the networks
-                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, batch_size,updates)
+                    with torch.autograd.set_detect_anomaly(True):
+                        critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, batch_size,updates)
                     writer.add_scalar('loss/critic_1', critic_1_loss, updates)
                     writer.add_scalar('loss/critic_2', critic_2_loss, updates)
                     writer.add_scalar('loss/policy', policy_loss, updates)
@@ -162,7 +163,7 @@ def train(seed: int = 69,
                     writer.add_scalar('entropy_temperature/alpha', alpha, updates)
                     updates += 1
 
-            next_state, reward, done, _ = env.step(action)  # Step
+            next_state, reward, done, _, _ = env.step(action)  # Step
             next_state = process_observation(next_state)
             next_state = encoder.sample(next_state)
             episode_steps += 1

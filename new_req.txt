@@ -1,0 +1,7 @@
+numpy
+gym
+#torch
+#torchvision
+#conda install pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
+tensorboard
+gym[box2d]
