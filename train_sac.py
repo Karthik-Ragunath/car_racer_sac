@@ -1,3 +1,4 @@
+import argparse
 import itertools
 from pathlib import Path
 from getpass import getuser
@@ -192,7 +193,7 @@ def train(seed: int = 69,
             if save_models: agent.save_model("carracer", f"{getuser()}_{date.month}_{date.day}_{date.hour}")
 
             for _ in range(episodes):
-                state = env.reset()
+                state = env.reset()[0]
                 state = process_observation(state)
                 state = encoder.sample(state)
 
@@ -201,7 +202,7 @@ def train(seed: int = 69,
                 while not done:
                     action = agent.select_action(state, eval=True)
 
-                    next_state, reward, done, _ = env.step(action)
+                    next_state, reward, done, _, _ = env.step(action)
                     next_state = process_observation(next_state)
                     next_state = encoder.sample(next_state)
                     episode_reward += reward
@@ -222,7 +223,30 @@ def train(seed: int = 69,
     env.close()
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path_to_actor", "-actor_path", help="specify path to actor", required=False)
+    parser.add_argument("--path_to_critic", "-critic_path", help="specify the critic path", required=False)
+    args = parser.parse_args()
+    return args
+
 if __name__ == "__main__":
+    args = parse_arguments()
     encoder = load_model("models/weights.pt", vae=False)
     encoder.to(DEVICE)
-    train(batch_size=512, load_memory=False, eval_interval=50, load_models=False)
+    if args.path_to_actor:
+        train(
+            batch_size=512, 
+            load_memory=False, 
+            eval_interval=50, 
+            load_models=True, 
+            path_to_actor=args.path_to_actor,
+            path_to_critic=args.path_to_critic
+        )
+    else:
+        train(
+            batch_size=512, 
+            load_memory=False, 
+            eval_interval=50, 
+            load_models=False
+        )
